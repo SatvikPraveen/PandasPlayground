@@ -1,31 +1,46 @@
-# Jupyter artifacts
+# ----------------------------
+# 📓 Jupyter Artifacts
+# ----------------------------
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# Python artifacts
+# ----------------------------
+# 🐍 Python Artifacts
+# ----------------------------
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 
-# Virtual environment (local)
+# ----------------------------
+# 🧪 Virtual Environments
+# ----------------------------
 venv/
 pandas_env/
 
-# Data/Export outputs
+# ----------------------------
+# 📂 Local Export/Output Data
+# ----------------------------
+exports/
 *.csv
 *.xlsx
 *.parquet
 *.pdf
-exports/
-assets/*.png
+*.tsv
 
-# OS files
+# ----------------------------
+# 🖼️ OS & IDE Artifacts
+# ----------------------------
 .DS_Store
 Thumbs.db
-
-# VSCode settings (optional)
 .vscode/
 
-# Docker
+# ----------------------------
+# 🐳 Docker Logs (Optional)
+# ----------------------------
 *.log
+
+# ----------------------------
+# ❗ Allow project assets (preview images, visuals)
+# ----------------------------
+!assets/*.png
