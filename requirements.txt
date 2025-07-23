@@ -1,0 +1,33 @@
+# Core Libraries
+pandas>=2.2.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Jupyter Notebook
+notebook>=7.0.0
+ipython>=8.0.0
+jupyterlab>=4.0.0
+
+# Excel and Parquet Support
+openpyxl>=3.1.0      # For Excel (.xlsx) read/write
+pyarrow>=14.0.0      # For Parquet read/write
+fastparquet>=2023.8.0  # Alternative Parquet engine
+
+# Performance Profiling (Optional but recommended)
+memory_profiler>=0.61.0
+psutil>=5.9.0
+
+# Exporting and Reporting
+nbconvert>=7.10.0    # For PDF/HTML export from notebooks
+jinja2>=3.1.0        # Template rendering for reports
+xhtml2pdf>=0.2.10    # Optional PDF exporter
+
+# Streamlit App (Optional UI Layer)
+streamlit>=1.33.0
+
+# Testing & Utilities
+pytest>=8.2.0
+
+# Dask for Large DataFrames (Optional)
+dask[dataframe]>=2024.4.1
