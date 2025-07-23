@@ -146,7 +146,7 @@ Whether you're fixing a bug, suggesting an enhancement, or adding new learning n
 ```bash
 # Step 1: Fork this repository on GitHub
 # Step 2: Clone your fork locally
-git clone https://github.com/your-username/PandasPlayground.git
+git clone https://github.com/SatvikPraveen/PandasPlayground.git
 cd PandasPlayground
 ```
 
