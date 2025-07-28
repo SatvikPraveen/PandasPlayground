@@ -21,12 +21,12 @@ pandas_env/
 # ----------------------------
 # 📂 Local Export/Output Data
 # ----------------------------
-exports/
-*.csv
-*.xlsx
-*.parquet
-*.pdf
-*.tsv
+# exports/
+# *.csv
+# *.xlsx
+# *.parquet
+# *.pdf
+# *.tsv
 
 # ----------------------------
 # 🖼️ OS & IDE Artifacts
