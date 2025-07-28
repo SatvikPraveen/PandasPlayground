@@ -1,9 +1,10 @@
 # 📊 PandasPlayground – A Comprehensive Data Manipulation Project
 
 ![Python](https://img.shields.io/badge/python-3.11-blue.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Dockerized](https://img.shields.io/badge/docker-ready-blue.svg)
 ![Notebooks](https://img.shields.io/badge/notebooks-10-brightgreen.svg)
+
 
 > Master data manipulation with **pandas** — from fundamentals to advanced performance tuning — using real-world datasets and modular notebooks.
 
