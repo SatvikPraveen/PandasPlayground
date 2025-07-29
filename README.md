@@ -5,7 +5,6 @@
 ![Dockerized](https://img.shields.io/badge/docker-ready-blue.svg)
 ![Notebooks](https://img.shields.io/badge/notebooks-10-brightgreen.svg)
 
-
 > Master data manipulation with **pandas** — from fundamentals to advanced performance tuning — using real-world datasets and modular notebooks.
 
 ---
@@ -35,7 +34,8 @@ PandasPlayground/
 ├── Dockerfile            # Docker support for reproducible environments
 ├── LICENSE.md
 ├── README.md             # You’re here!
-├── requirements.txt      # All required dependencies
+├── requirements.txt      # Minimal dependencies to run the project
+├── requirements_dev.txt  # Full dev environment
 └── STREAMLIT_App.py      # Interactive dashboard using Streamlit
 ```
 
