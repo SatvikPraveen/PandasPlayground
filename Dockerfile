@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y \
     libxrender1 \
     libsm6 \
     libxext6 \
+    pkg-config \
+    libcairo2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only requirements to leverage Docker cache
