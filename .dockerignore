@@ -1,0 +1,74 @@
+# ========================================
+# 🐳 Docker Ignore File
+# ========================================
+# Prevent unnecessary files from being copied into Docker images
+
+# Virtual environments
+venv/
+pandas_env/
+env/
+.venv/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+
+# Jupyter artifacts
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation (optional - uncomment if you want to exclude)
+# README.md
+# CONTRIBUTING.md
+# CODE_OF_CONDUCT.md
+# LICENSE
+
+# Test files (optional - uncomment to exclude from production images)
+# tests/
+# test_*.py
+# *_test.py
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+logs/
+
+# Environment files (if you add them later)
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large data files (if you want to mount them instead)
+# exports/
+# assets/

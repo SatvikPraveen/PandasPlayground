@@ -11,15 +11,32 @@ __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
 
 # ----------------------------
 # 🧪 Virtual Environments
 # ----------------------------
 venv/
 pandas_env/
+env/
+.venv/
+ENV/
 
 # ----------------------------
-# 📂 Local Export/Output Data
+# 🧪 Testing
+# ----------------------------
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ----------------------------
+# 📂 Local Export/Output Data (optional - uncomment to ignore)
 # ----------------------------
 # exports/
 # *.csv
@@ -34,6 +51,10 @@ pandas_env/
 .DS_Store
 Thumbs.db
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # ----------------------------
 # 🐳 Docker Logs (Optional)
@@ -41,6 +62,15 @@ Thumbs.db
 *.log
 
 # ----------------------------
+# 🔒 Environment Variables
+# ----------------------------
+.env
+.env.local
+.env.*.local
+
+# ----------------------------
 # ❗ Allow project assets (preview images, visuals)
 # ----------------------------
 !assets/*.png
+!assets/*.jpg
+!assets/*.svg
