@@ -21,7 +21,6 @@ psutil>=5.9.0
 # Exporting and Reporting
 nbconvert>=7.10.0    # For PDF/HTML export from notebooks
 jinja2>=3.1.0        # Template rendering for reports
-xhtml2pdf>=0.2.10    # Optional PDF exporter
 
 # Streamlit App (Optional UI Layer)
 streamlit>=1.33.0
