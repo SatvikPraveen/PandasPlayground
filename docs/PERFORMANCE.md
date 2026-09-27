@@ -1,350 +1,75 @@
-# ⚡ Performance Benchmarks & Optimization Guide
+# Performance guide
 
-This document details performance benchmarks, optimization techniques, and best practices demonstrated in PandasPlayground.
+This guide explains the pandas performance techniques demonstrated in the project and how to measure them.
+Every number it cites comes from the benchmark harness. **Measured results live in
+[benchmark_results.md](benchmark_results.md)**, and raw samples with full environment details live in
+[`benchmarks/results/latest.json`](../benchmarks/results/latest.json).
 
----
+> Earlier versions of this page quoted figures such as "73% memory reduction" and "65% faster
+> groupby" that no script could reproduce. They have been removed. Treat any number you cannot
+> regenerate with the commands below as unverified.
 
-## 📊 Benchmark Overview
+## Reproducing the measurements
 
-All benchmarks were run on:
-- **Hardware:** Apple M1 Pro, 16GB RAM
-- **Python:** 3.11.0
-- **Pandas:** 2.2.0
-- **Dataset Sizes:** 100K - 1M rows
-
----
-
-## 🧪 Memory Optimization
-
-### Test: DataFrame Memory Reduction
-
-**Script:** `scripts/optimize_memory.py`  
-**Function:** `optimize_dataframe_memory()`
-
-#### Results
-
-| Dataset | Original Size | Optimized Size | Reduction | Technique |
-|---------|--------------|----------------|-----------|-----------|
-| Superstore (10K rows) | 1.2 MB | 0.4 MB | **67%** | Downcast int64→int16, category dtype |
-| Loans (100K rows) | 45 MB | 12 MB | **73%** | Category conversion, int downcasting |
-| Weather (1M rows) | 380 MB | 95 MB | **75%** | Category for strings, float32 |
-
-#### Implementation
-
-```python
-from scripts.optimize_memory import optimize_dataframe_memory
-
-# Before optimization
-df = pd.read_csv('large_dataset.csv')
-print(f"Original: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
-
-# After optimization  
-df_optimized = optimize_dataframe_memory(df)
-print(f"Optimized: {df_optimized.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+```bash
+pandasplayground benchmark --rows 100000 --repeat 7 --markdown docs/benchmark_results.md
+# or
+make benchmark
 ```
 
-**Key Techniques:**
-- Convert object dtype to `category` for low-cardinality strings
-- Downcast `int64` → `int32` or `int16` when safe
-- Use `float32` instead of `float64` when precision allows
-- Avoid mixed dtypes in columns
+Methodology (calibrated `timeit` loops, medians with IQR, recorded environment) is described in
+[METHODOLOGY.md, section 4](METHODOLOGY.md#4-benchmarking). Timings depend on hardware and library
+versions. Compare them within one machine and one run.
 
----
+## Techniques and what the benchmark shows
 
-## ⚙️ Processing Speed Benchmarks
+| Technique | Why it helps | Benchmark case |
+| --- | --- | --- |
+| Vectorise instead of `DataFrame.apply(axis=1)` | Row-wise `apply` calls a Python function per row. Column arithmetic runs in compiled loops. | `vectorized_vs_apply` |
+| Parquet instead of CSV for intermediate data | Columnar, typed and compressed. No text parsing or dtype inference on read. | `read_csv_vs_parquet` |
+| PyArrow-backed strings | Arrow string kernels avoid per-element Python objects. pandas 3 uses them by default for `str`. | `string_ops_pyarrow` |
+| `category` dtype for low-cardinality keys | Grouping works on small integer codes instead of hashing strings. | `groupby_category_keys` |
+| `Series.isin` instead of chained `==` / `\|` | One hash-set lookup pass instead of several full comparisons plus boolean combination. | `isin_vs_chained_or` |
+| Downcast numerics and categorise text | Smaller dtypes reduce memory and cache pressure. | Memory line of the results |
 
-### 1. GroupBy Operations
-
-#### Standard vs Optimized GroupBy
-
-```python
-# Test: Group 1M rows by category (10 unique values)
-df = pd.DataFrame({
-    'category': np.random.choice(['A','B','C','D','E','F','G','H','I','J'], 1_000_000),
-    'value': np.random.randn(1_000_000)
-})
-```
-
-| Method | Time | Memory Peak |
-|--------|------|-------------|
-| Standard `groupby().agg()` | 2.3s | 180 MB |
-| Pre-sorted + `groupby(sort=False)` | 0.8s | 160 MB |
-| **Improvement** | **65% faster** | **11% less** |
-
-**Optimization:**
-```python
-# Instead of:
-result = df.groupby('category').agg({'value': ['sum', 'mean']})
-
-# Use pre-sorted:
-df_sorted = df.sort_values('category')
-result = df_sorted.groupby('category', sort=False).agg({'value': ['sum', 'mean']})
-```
-
----
-
-### 2. String Operations
-
-#### Vectorized vs Apply
+### Memory
 
 ```python
-# Test: Clean 500K strings
-df = pd.DataFrame({'text': [' MixED CaSe  ' for _ in range(500_000)]})
+from pandasplayground.memory import optimize_dataframe
+
+optimized, report = optimize_dataframe(df, auto_category_threshold=0.5, return_report=True)
+print(f"{report.reduction:.1%} smaller", report.dtype_changes)
 ```
 
-| Method | Time | Notes |
-|--------|------|-------|
-| `.apply(lambda x: x.strip().lower())` | 5.1s | Row-by-row iteration |
-| `.str.strip().str.lower()` | 1.2s | Vectorized operations |
-| **Improvement** | **76% faster** | Always prefer `.str` accessor |
+Integer downcasting is always exact. Float64 is converted to float32 only when every value round-trips
+exactly, unless you opt in with a tolerance such as `float_rtol=1e-6`. Values like `1292.63` are not
+exactly representable in float32, so the default leaves such columns as float64.
 
----
+### Other techniques covered in the notebooks
 
-### 3. Data Type Conversion
+These are demonstrated in `notebooks/06_advanced_pandas.ipynb` and `notebooks/10_performance_diagnostics.ipynb`.
+The benchmark suite does not measure them yet.
 
-#### Parsing Dates
+- **Chunked reading** with `pd.read_csv(..., chunksize=n)` bounds peak memory for files larger than RAM.
+- **`DataFrame.eval` / `query`** can help for long arithmetic expressions on large frames through numexpr.
+  For small frames the parsing overhead dominates.
+- **Avoid chained indexing** (`df[mask]["col"] = x`). Use `df.loc[mask, "col"] = x`. With pandas 3
+  Copy-on-Write, chained assignment never modifies the original.
+- **Dask** parallelises pandas-style operations across cores or machines when data exceeds memory.
+
+## Profiling your own code
 
 ```python
-# Test: Parse 1M date strings
-dates = ['2024-01-15'] * 1_000_000
+# Deep memory usage per column
+df.memory_usage(deep=True)
+
+# Time an expression in IPython or Jupyter
+%timeit df.groupby("region")["sales"].sum()
+
+# Line-by-line memory (pip install memory_profiler)
+%load_ext memory_profiler
+%memit df.groupby("region")["sales"].sum()
 ```
 
-| Method | Time |
-|--------|------|
-| `pd.to_datetime(dates)` | 0.8s |
-| `pd.to_datetime(dates, format='%Y-%m-%d')` | 0.3s |
-| **Improvement** | **62% faster** with explicit format |
-
----
-
-### 4. Merging Large DataFrames
-
-```python
-# Test: Merge two 500K row dataframes
-df1 = pd.DataFrame({'key': range(500_000), 'val1': np.random.rand(500_000)})
-df2 = pd.DataFrame({'key': range(500_000), 'val2': np.random.rand(500_000)})
-```
-
-| Method | Time | Memory Peak |
-|--------|------|-------------|
-| `merge()` without index | 1.2s | 320 MB |
-| `merge()` with indexed key | 0.4s | 280 MB |
-| **Improvement** | **67% faster** | **12% less memory** |
-
-**Optimization:**
-```python
-# Set index before merging
-df1_indexed = df1.set_index('key')
-df2_indexed = df2.set_index('key')
-result = df1_indexed.join(df2_indexed)
-```
-
----
-
-### 5. Reading Large Files
-
-#### CSV vs Parquet vs HDF5
-
-**Dataset:** 1M rows, 20 columns, mixed types
-
-| Format | Read Time | Write Time | File Size | Use Case |
-|--------|-----------|------------|-----------|----------|
-| CSV | 8.5s | 12.3s | 180 MB | Portability, text editing |
-| Parquet | 1.2s | 2.1s | 45 MB | **Best overall** |
-| HDF5 | 2.1s | 3.5s | 52 MB | Append operations |
-| Feather | 0.8s | 1.5s | 90 MB | Fastest for temp storage |
-
-**Recommendation:** Use **Parquet** for most cases (great compression + speed).
-
----
-
-## 🔥 Optimization Techniques
-
-### 1. Chunking Large Files
-
-```python
-# Instead of loading entire file:
-df = pd.read_csv('huge_file.csv')  # May cause MemoryError
-
-# Use chunks:
-chunks = pd.read_csv('huge_file.csv', chunksize=50_000)
-results = []
-for chunk in chunks:
-    processed = process_chunk(chunk)
-    results.append(processed)
-df = pd.concat(results, ignore_index=True)
-```
-
-**Memory Reduction:** 90%+ for files larger than RAM
-
----
-
-### 2. Use `eval()` for Complex Arithmetic
-
-```python
-# Test: Calculate expression on 1M rows
-df = pd.DataFrame({'a': np.random.rand(1_000_000), 
-                   'b': np.random.rand(1_000_000),
-                   'c': np.random.rand(1_000_000)})
-```
-
-| Method | Time |
-|--------|------|
-| `df['result'] = df['a'] + df['b'] * df['c']` | 45ms |
-| `df.eval('result = a + b * c', inplace=True)` | 18ms |
-| **Improvement** | **60% faster** |
-
----
-
-### 3. Categorical Data
-
-```python
-# Test: 1M rows with 10 unique values
-df = pd.DataFrame({'category': np.random.choice(['A','B','C','D','E'], 1_000_000)})
-```
-
-| Type | Memory | Operations |
-|------|--------|------------|
-| `object` | 58 MB | Slower |
-| `category` | 1.2 MB | **98% less** |
-
-**When to use:** < 50% unique values
-
----
-
-### 4. Avoid Chained Indexing
-
-```python
-# ❌ Bad (creates copies):
-df[df['A'] > 0]['B'] = 100  # Raises SettingWithCopyWarning
-
-# ✅ Good (single operation):
-df.loc[df['A'] > 0, 'B'] = 100
-```
-
----
-
-### 5. Use `query()` for Complex Filters
-
-```python
-# Instead of:
-result = df[(df['A'] > 10) & (df['B'] < 20) & (df['C'] == 'value')]
-
-# Use query():
-result = df.query('A > 10 and B < 20 and C == "value"')
-```
-
-**Benefits:**
-- Cleaner syntax
-- Slightly faster for large datasets
-- Better for dynamic queries
-
----
-
-## 📈 Scaling with Dask
-
-For datasets > 10GB, use **Dask** (parallel computing library):
-
-```python
-import dask.dataframe as dd
-
-# Read large CSV in parallel
-ddf = dd.read_csv('huge_file.csv')
-
-# Compute aggregations in parallel
-result = ddf.groupby('category').value.mean().compute()
-```
-
-**See:** `10_performance_diagnostics.ipynb` for Dask examples
-
----
-
-## 🧪 Profiling Your Code
-
-### Memory Profiler
-
-```python
-from memory_profiler import profile
-
-@profile
-def process_data(df):
-    return df.groupby('category').agg({'value': 'sum'})
-
-# Run with: python -m memory_profiler script.py
-```
-
-### Time Profiler
-
-```python
-import cProfile
-
-cProfile.run('process_data(df)', sort='cumtime')
-```
-
-### Pandas Built-in Profiling
-
-```python
-# Check memory usage
-df.info(memory_usage='deep')
-
-# Check dtypes
-df.dtypes
-
-# Check size
-df.memory_usage(deep=True).sum() / 1024**2  # MB
-```
-
----
-
-## 🎯 Quick Wins Checklist
-
-- [ ] Convert low-cardinality strings to `category` dtype
-- [ ] Use `pd.read_csv(..., dtype={...})` to specify types upfront
-- [ ] Use `.str` methods instead of `.apply()` for strings
-- [ ] Set `index` before merging on that column
-- [ ] Use `query()` for complex boolean indexing
-- [ ] Specify date format in `pd.to_datetime(format='...')`
-- [ ] Use Parquet instead of CSV for intermediate files
-- [ ] Chunk large file reads with `chunksize=`
-- [ ] Use `.loc` instead of chained indexing
-- [ ] Profile before optimizing (measure, don't guess!)
-
----
-
-## 📚 Further Reading
-
-- [Pandas Performance Guide](https://pandas.pydata.org/docs/user_guide/enhancingperf.html)
-- [Dask Documentation](https://docs.dask.org/en/latest/)
-- [Effective Pandas (Book)](https://www.amazon.com/Effective-Pandas-Patterns-Manipulation-Treading/dp/B09MYXXSFM)
-
----
-
-## 🔬 Running Your Own Benchmarks
-
-Use our benchmark template:
-
-```python
-import time
-import pandas as pd
-import numpy as np
-
-# Create test data
-df = pd.DataFrame({
-    'col1': np.random.rand(1_000_000),
-    'col2': np.random.choice(['A','B','C'], 1_000_000)
-})
-
-# Benchmark
-start = time.time()
-result = df.groupby('col2').sum()
-end = time.time()
-
-print(f"Time: {end - start:.4f} seconds")
-print(f"Memory: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
-```
-
----
-
-**Last Updated:** March 8, 2026  
-**Hardware Reference:** Apple M1 Pro, 16GB RAM  
-**Pandas Version:** 2.2.0+
+To add a benchmark case, write a function in `src/pandasplayground/benchmark.py` that returns a
+`Comparison` of a baseline and an optimised `Timing`, and add it to `run_suite`.

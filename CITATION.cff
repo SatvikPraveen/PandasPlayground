@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use PandasPlayground in teaching or research, please cite it as below."
+title: "PandasPlayground: a reproducible, tested toolkit and curriculum for data manipulation with pandas"
+type: software
+authors:
+  - family-names: Praveen
+    given-names: Satvik
+    email: satvikpraveen707@gmail.com
+version: 2.0.0
+date-released: "2026-09-27"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/SatvikPraveen/PandasPlayground"
+url: "https://github.com/SatvikPraveen/PandasPlayground"
+keywords:
+  - pandas
+  - data science education
+  - reproducibility
+  - data validation
+  - benchmarking
+abstract: >-
+  PandasPlayground pairs a ten-notebook pandas curriculum with a typed, tested Python package.
+  It provides declarative schema validation, a deterministic pipeline with provenance manifests,
+  interval estimates and effect sizes for inference, seeded synthetic data that regenerates
+  bit-for-bit, and a benchmark harness that records its environment. Continuous integration
+  re-derives every output from raw data and fails on any drift.
