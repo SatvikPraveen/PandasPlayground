@@ -54,6 +54,8 @@ class Column:
     def rules(self) -> str:
         """Human-readable summary of constraints, used in generated documentation."""
         parts: list[str] = []
+        if self.coerce_datetime:
+            parts.append("parseable as datetime")
         if not self.nullable:
             parts.append("not null")
         if self.unique:
