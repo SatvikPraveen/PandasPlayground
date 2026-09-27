@@ -1,53 +1,55 @@
-import pandas as pd
+"""Legacy I/O helpers. Prefer :mod:`pandasplayground.io`."""
+
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Any
 
-import matplotlib.pyplot as plt
+import pandas as pd
 
-def load_csv(filepath, **kwargs):
-    return pd.read_csv(filepath, **kwargs)
-
-def load_excel(filepath, sheet_name=0, **kwargs):
-    return pd.read_excel(filepath, sheet_name=sheet_name, **kwargs)
-
-def load_json(filepath, **kwargs):
-    return pd.read_json(filepath, **kwargs)
-
-def load_parquet(filepath, **kwargs):
-    return pd.read_parquet(filepath, **kwargs)
-
-def save_csv(df, output_path, index=False):
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=index)
-
-def save_parquet(df, output_path):
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(output_path)
+import scripts
+from pandasplayground.io import (
+    load_csv,
+    load_excel,
+    load_json,
+    load_parquet,
+    read,
+    save_csv,
+    save_excel,
+    save_parquet,
+    sha256_file,
+    write,
+)
 
 
-def load_dataset_summary(df, name="Dataset"):
-    print(f"📊 {name} — shape: {df.shape}")
-    print("🔸 Columns:", list(df.columns))
-    print("🔸 Sample:")
+def load_dataset_summary(df: pd.DataFrame, name: str = "Dataset") -> pd.DataFrame:
+    print(f"{name}: shape={df.shape}")
+    print("Columns:", list(df.columns))
     return df.head()
 
-def save_plot(fig, output_path):
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, bbox_inches='tight')
 
-def export_styled_excel(df, path: str, style_func=None):
+def save_plot(fig: Any, output_path: str | Path) -> Path:
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out, bbox_inches="tight")
+    return out
+
+
+def export_styled_excel(df: pd.DataFrame, path: str | Path, style_func: Any = None) -> Path:
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
     styled = style_func(df) if style_func else df.style
-    styled.to_excel(path, engine="openpyxl")
+    styled.to_excel(out, engine="openpyxl")
+    return out
 
-def export_csv(df: pd.DataFrame, path: str):
-    """Export DataFrame to CSV and create directories if needed."""
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(path, index=False)
-    print(f"✅ Exported CSV to: {path}")
 
-def export_excel(df: pd.DataFrame, path: str):
-    """Export DataFrame to Excel and create directories if needed."""
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_excel(path, index=False, engine="openpyxl")
-    print(f"✅ Exported Excel to: {path}")
+def export_csv(df: pd.DataFrame, path: str | Path) -> Path:
+    out = write(df, Path(path))
+    print(f"Exported CSV to: {out}")
+    return out
+
+
+def export_excel(df: pd.DataFrame, path: str | Path) -> Path:
+    out = write(df, Path(path).with_suffix(".xlsx") if Path(path).suffix == "" else Path(path))
+    print(f"Exported Excel to: {out}")
+    return out

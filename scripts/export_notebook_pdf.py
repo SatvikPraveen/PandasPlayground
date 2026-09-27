@@ -1,29 +1,34 @@
-# scripts/export_pdf.py
+"""Export a notebook to PDF via nbconvert (requires a LaTeX install such as TeX Live / MacTeX).
 
+Usage:
+    python scripts/export_notebook_pdf.py [NOTEBOOK] [--out-dir exports]
+"""
+
+from __future__ import annotations
+
+import argparse
 import subprocess
+import sys
 from pathlib import Path
 
-# Define paths
-notebook_path = Path("notebooks/09_reporting_exporting.ipynb")
-output_path = Path("exports")
-output_filename = "report_final.pdf"
 
-# Ensure output directory exists
-output_path.mkdir(parents=True, exist_ok=True)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("notebook", nargs="?", default="notebooks/09_reporting_exporting.ipynb")
+    parser.add_argument("--out-dir", default="exports")
+    args = parser.parse_args(argv)
 
-# Export notebook as PDF using nbconvert
-try:
-    subprocess.run([
-        "jupyter", "nbconvert",
-        "--to", "pdf",
-        "--output-dir", str(output_path),
-        "--output", output_filename,
-        str(notebook_path)
-    ], check=True)
+    notebook, out_dir = Path(args.notebook), Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cmd = ["jupyter", "nbconvert", "--to", "pdf", "--output-dir", str(out_dir), str(notebook)]
+    try:
+        subprocess.run(cmd, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        print(f"PDF export failed: {exc}\nTip: install xelatex (TeX Live / MacTeX) and nbconvert.", file=sys.stderr)
+        return 1
+    print(f"Exported {notebook} to {out_dir / notebook.with_suffix('.pdf').name}")
+    return 0
 
-    print(f"✅ Successfully exported to {output_path / output_filename}")
 
-except subprocess.CalledProcessError as e:
-    print("❌ PDF export failed.")
-    print("Reason:", e)
-    print("Tip: Make sure xelatex or LaTeX is installed on your system.")
+if __name__ == "__main__":
+    raise SystemExit(main())
