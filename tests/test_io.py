@@ -52,3 +52,12 @@ def test_load_excel_all_sheets(tmp_path):
         pd.DataFrame({"x": [2]}).to_excel(writer, sheet_name="two", index=False)
     sheets = io.load_excel(path, sheet_name=None)
     assert set(sheets) == {"one", "two"}
+
+
+def test_csv_float_roundtrip_is_byte_identical(tmp_path):
+    values = [2171.483870967742, 0.2860374622226951, -0.286861329612224, 1419.756666666667, 1e-17, 123456.789]
+    src = tmp_path / "src.csv"
+    io.write(pd.DataFrame({"x": values}), src)
+    copy = io.write(io.read(src), tmp_path / "copy.csv")
+    assert src.read_bytes() == copy.read_bytes()
+    assert io.read(src)["x"].tolist() == values

@@ -37,6 +37,9 @@ def _ensure_parent(path: PathLike) -> Path:
 def read(path: PathLike, **kwargs: Any) -> pd.DataFrame:
     """Read a tabular file, dispatching on its extension.
 
+    CSV/TSV floats are parsed with ``float_precision="round_trip"`` so that reading and re-writing
+    a file reproduces it exactly on every platform.
+
     Raises:
         FileNotFoundError: if ``path`` does not exist.
         ValueError: if the extension is not supported.
@@ -45,6 +48,10 @@ def read(path: PathLike, **kwargs: Any) -> pd.DataFrame:
     if not p.exists():
         raise FileNotFoundError(p)
     reader = _READERS.get(p.suffix.lower())
+    if p.suffix.lower() in {".csv", ".tsv"}:
+        # pandas' default fast float parser is not guaranteed to round-trip the last digit, and its
+        # rounding can differ across CPU architectures. Exact parsing makes read -> write byte-stable.
+        kwargs.setdefault("float_precision", "round_trip")
     if reader is None:
         raise ValueError(f"Unsupported file format {p.suffix!r}; expected one of {SUPPORTED_FORMATS}")
     df = reader(p, **kwargs)
