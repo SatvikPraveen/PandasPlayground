@@ -1,42 +1,28 @@
-# Use a lightweight base image
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1
+# Reproducible environment for PandasPlayground: package, CLI, notebooks and dashboard.
+FROM python:3.12-slim AS base
 
-# Avoid interactive prompts during install
-ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Set working directory
 WORKDIR /app
 
-# Preinstall essential system dependencies for packages like pandas, matplotlib, Jupyter
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    gcc \
-    wget \
-    git \
-    libpq-dev \
-    libgl1 \
-    libglib2.0-0 \
-    libxrender1 \
-    libsm6 \
-    libxext6 \
-    pkg-config \
-    libcairo2 \
-    libcairo2-dev \
-    python3-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Install dependencies first to maximise layer caching.
+COPY pyproject.toml README.md ./
+COPY src/pandasplayground/__init__.py src/pandasplayground/__init__.py
+RUN pip install ".[viz,app,datagen,notebooks,perf]" && pip uninstall -y pandasplayground
 
-# Copy only requirements to leverage Docker cache
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copy full project
+# Copy the project and install the package itself (no dependency resolution needed).
 COPY . .
+RUN pip install --no-deps -e . \
+    && useradd --create-home --uid 1000 analyst \
+    && chown -R analyst:analyst /app
+USER analyst
 
-# Expose Jupyter port
-EXPOSE 8888
+EXPOSE 8888 8501
 
-# Default command: start Jupyter Lab
-CMD ["jupyter", "lab", "--ip=0.0.0.0", "--allow-root", "--no-browser", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+# Default: JupyterLab. Override with e.g. `docker run ... pandasplayground pipeline`
+# or `docker run -p 8501:8501 ... streamlit run STREAMLIT_App.py --server.address=0.0.0.0`.
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--ServerApp.root_dir=/app"]

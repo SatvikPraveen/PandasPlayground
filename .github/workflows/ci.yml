@@ -1,94 +1,127 @@
-# ========================================
-# 🤖 GitHub Actions - CI Workflow
-# ========================================
-# Runs tests and code quality checks on every push/PR
-
 name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]
   pull_request:
-    branches: [ main, develop ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
+  lint:
+    name: Lint & type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - name: Ruff lint
+        run: ruff check src scripts tests pages STREAMLIT_App.py
+      - name: Ruff format
+        run: ruff format --check src scripts tests pages STREAMLIT_App.py
+      - name: Mypy (strict)
+        run: mypy
+      - name: Data dictionary is in sync with schemas
+        run: pandasplayground docs data-dictionary --check
+
   test:
-    name: Test Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    name: Tests (py${{ matrix.python }}, pandas ${{ matrix.pandas }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
-
+        include:
+          - { os: ubuntu-latest, python: "3.10", pandas: "2.2.*" }
+          - { os: ubuntu-latest, python: "3.11", pandas: "latest" }
+          - { os: ubuntu-latest, python: "3.12", pandas: "2.2.*" }
+          - { os: ubuntu-latest, python: "3.12", pandas: "latest" }
+          - { os: ubuntu-latest, python: "3.13", pandas: "latest" }
+          - { os: macos-latest, python: "3.13", pandas: "latest" }
+          - { os: windows-latest, python: "3.12", pandas: "latest" }
+    env:
+      HYPOTHESIS_PROFILE: ci
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install
+        shell: bash
+        run: |
+          pip install -e ".[dev,datagen,app]"
+          if [ "${{ matrix.pandas }}" != "latest" ]; then pip install "pandas==${{ matrix.pandas }}"; fi
+          python -c "import pandas, numpy; print('pandas', pandas.__version__, 'numpy', numpy.__version__)"
+      - name: Run tests with coverage
+        run: pytest --cov --cov-report=xml --cov-report=term -m "not slow"
+      - name: Upload coverage report
+        if: matrix.python == '3.12' && matrix.pandas == 'latest' && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
 
-    - name: 🐍 Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip'
-
-    - name: 📦 Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements_dev.txt
-
-    - name: 🧪 Run tests
-      run: |
-        pytest -v
-
-    - name: 🧹 Check code formatting (Black)
-      run: |
-        black --check scripts/ STREAMLIT_App.py pages/ --line-length=120
-
-    - name: 🔍 Lint code (Flake8)
-      run: |
-        flake8 scripts/ STREAMLIT_App.py pages/ --max-line-length=120 --extend-ignore=E203,W503
-
-  notebook-check:
-    name: Validate Notebooks
+  slow-tests:
+    name: Statistical property tests (slow)
     runs-on: ubuntu-latest
-
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev,datagen]"
+      - run: pytest -m slow -o addopts="--strict-markers"
 
-    - name: 🐍 Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-
-    - name: 📦 Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install nbconvert jupyter
-
-    - name: ✅ Check notebook syntax
-      run: |
-        for notebook in notebooks/*.ipynb; do
-          echo "Checking $notebook"
-          jupyter nbconvert --to notebook --execute --stdout "$notebook" > /dev/null
-        done
-      continue-on-error: true  # Some notebooks may require data files
+  reproducibility:
+    name: Reproducibility (pipeline + notebooks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements_dev.txt
+      - name: Validate every bundled dataset against its schema
+        run: pandasplayground validate
+      - name: Re-run pipeline from raw data and require a byte-identical export
+        run: |
+          pandasplayground pipeline
+          git diff --exit-code -- exports/final_merged_pipeline.csv
+      - name: Regenerate synthetic data and validate it
+        run: |
+          pandasplayground generate --out runs/generated
+          pandasplayground validate --data-dir runs/generated --export /nonexistent
+      - name: Execute every notebook
+        run: pytest --nbmake --nbmake-timeout=900 notebooks -o addopts=""
+      - name: Notebook CSV outputs must not drift
+        run: git diff --exit-code --stat -- '*.csv'
 
   docker:
-    name: Build Docker Image
+    name: Docker image
     runs-on: ubuntu-latest
-
     steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-
-    - name: 🐳 Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: 🏗️ Build Docker image
-      run: |
-        docker build -t pandasplayground:latest .
-
-    - name: ✅ Verify Docker image
-      run: |
-        docker run --rm pandasplayground:latest python --version
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: pandasplayground:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test
+        run: |
+          docker run --rm pandasplayground:ci pandasplayground --version
+          docker run --rm pandasplayground:ci pandasplayground validate

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -36,7 +37,7 @@ def test_pipeline_writes_output_and_manifest(tmp_path):
     assert (tmp_path / "out.csv").exists()
     assert manifest["outputs"][0]["sha256"] == io.sha256_file(tmp_path / "out.csv")
     assert manifest["outputs"][0]["rows"] == len(result.frame)
-    assert {i["path"].split("/")[-1] for i in manifest["inputs"]} == {"superstore_sales.csv", "covid_data.parquet"}
+    assert {Path(i["path"]).name for i in manifest["inputs"]} == {"superstore_sales.csv", "covid_data.parquet"}
     assert manifest["validation"] == {"superstore_sales": True, "covid_data": True, "final_merged_pipeline": True}
     assert manifest["environment"]["packages"]["pandas"] == pd.__version__
 

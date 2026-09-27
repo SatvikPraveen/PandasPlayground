@@ -1,67 +1,71 @@
-# ========================================
-# 🛠️ Makefile for PandasPlayground
-# ========================================
-# Common development tasks automated
+# PandasPlayground developer tasks. Run `make help` for a list.
+PY ?= python
 
-.PHONY: help install install-dev test clean run-jupyter run-streamlit docker-build docker-run lint format
+.PHONY: help install install-dev lint format typecheck test test-all coverage notebooks validate pipeline \
+        reproduce benchmark docs check clean run-jupyter run-streamlit docker-build docker-run
 
-# Default target
-help:
-	@echo "📊 PandasPlayground - Available Commands:"
-	@echo ""
-	@echo "  make install        - Install production dependencies"
-	@echo "  make install-dev    - Install development dependencies"
-	@echo "  make test           - Run all tests"
-	@echo "  make lint           - Run code linting (flake8)"
-	@echo "  make format         - Format code with black"
-	@echo "  make clean          - Remove Python artifacts and cache"
-	@echo "  make run-jupyter    - Start Jupyter Lab"
-	@echo "  make run-streamlit  - Start Streamlit app"
-	@echo "  make docker-build   - Build Docker image"
-	@echo "  make docker-run     - Run Docker container"
-	@echo ""
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
 
-# Install dependencies
-install:
-	pip install --upgrade pip
-	pip install -r requirements.txt
+install: ## Install runtime + notebook + dashboard dependencies
+	$(PY) -m pip install -r requirements.txt
 
-install-dev:
-	pip install --upgrade pip
-	pip install -r requirements_dev.txt
+install-dev: ## Install everything needed for development
+	$(PY) -m pip install -r requirements_dev.txt
+	pre-commit install
 
-# Run tests
-test:
-	pytest -v
+lint: ## Lint and check formatting
+	ruff check src scripts tests pages STREAMLIT_App.py
+	ruff format --check src scripts tests pages STREAMLIT_App.py
 
-# Code quality
-lint:
-	flake8 scripts/ STREAMLIT_App.py pages/ --max-line-length=120
+format: ## Auto-format and fix lint issues
+	ruff check --fix src scripts tests pages STREAMLIT_App.py
+	ruff format src scripts tests pages STREAMLIT_App.py
 
-format:
-	black scripts/ STREAMLIT_App.py pages/ --line-length=120
-	isort scripts/ STREAMLIT_App.py pages/
+typecheck: ## Strict type-check the package
+	mypy
 
-# Clean artifacts
-clean:
-	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
-	find . -type f -name "*.pyd" -delete
-	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
-	find . -type d -name ".ipynb_checkpoints" -exec rm -rf {} + 2>/dev/null || true
+test: ## Fast test suite
+	pytest -m "not slow"
 
-# Run development servers
-run-jupyter:
-	jupyter lab --ip=0.0.0.0 --no-browser
+test-all: ## All tests, including slow statistical property tests
+	pytest
 
-run-streamlit:
+coverage: ## Tests with an HTML coverage report
+	pytest --cov --cov-report=term --cov-report=html
+
+notebooks: ## Execute every notebook top to bottom
+	pytest --nbmake --nbmake-timeout=900 notebooks -o addopts=""
+
+validate: ## Validate all datasets against their schemas
+	pandasplayground validate
+
+pipeline: ## Rebuild the final export from raw data (+ provenance manifest)
+	pandasplayground pipeline
+
+reproduce: validate pipeline notebooks ## Full reproducibility check: exports must not change
+	git diff --exit-code -- exports/final_merged_pipeline.csv '*.csv'
+
+benchmark: ## Run the benchmark suite and refresh docs/benchmark_results.md
+	pandasplayground benchmark --markdown docs/benchmark_results.md
+
+docs: ## Regenerate code-derived documentation
+	pandasplayground docs data-dictionary
+
+check: lint typecheck test ## Everything CI's lint + test jobs run
+
+clean: ## Remove caches and build artefacts
+	find . -type d \( -name __pycache__ -o -name .ipynb_checkpoints \) -prune -exec rm -rf {} +
+	rm -rf .pytest_cache .mypy_cache .ruff_cache .hypothesis htmlcov .coverage coverage.xml build dist *.egg-info src/*.egg-info runs
+
+run-jupyter: ## Start JupyterLab
+	jupyter lab --no-browser
+
+run-streamlit: ## Start the Streamlit dashboard
 	streamlit run STREAMLIT_App.py
 
-# Docker commands
-docker-build:
+docker-build: ## Build the Docker image
 	docker build -t pandasplayground:latest .
 
-docker-run:
-	docker run -p 8899:8888 -v $$(pwd):/app pandasplayground:latest
+docker-run: ## Run JupyterLab in Docker on http://localhost:8888
+	docker run --rm -p 8888:8888 pandasplayground:latest
