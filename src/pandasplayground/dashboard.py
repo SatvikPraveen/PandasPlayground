@@ -47,16 +47,31 @@ def kpis(df: pd.DataFrame) -> Kpis:
     )
 
 
-def correlation_table(df: pd.DataFrame, x: str = "sales", y: str = "new_cases") -> pd.DataFrame:
-    """Raw vs first-differenced correlation between two monthly series, with 95% CIs."""
-    rows = []
-    for label, est in (
-        ("levels (Pearson)", stats.correlation_ci(df[x], df[y])),
-        ("levels (Spearman)", stats.correlation_ci(df[x], df[y], method="spearman")),
-        ("first differences (Pearson)", stats.differenced_correlation(df[x], df[y])),
-    ):
-        rows.append({"series": label, "r": est.point, "ci_low": est.low, "ci_high": est.high})
-    return pd.DataFrame(rows)
+def correlation_table(
+    df: pd.DataFrame, x: str = "sales", y: str = "new_cases", days: pd.DataFrame | None = None
+) -> pd.DataFrame:
+    """Correlation between two monthly totals, with 95% CIs, under several adjustments.
+
+    ``days`` (from :func:`pandasplayground.pipeline.days_observed`) adds per-day-rate rows, which remove
+    the calendar-length confound that raw monthly sums share.
+    """
+    candidates = [
+        ("monthly totals (Pearson)", stats.correlation_ci(df[x], df[y])),
+        ("monthly totals (Spearman)", stats.correlation_ci(df[x], df[y], method="spearman")),
+        ("first differences of totals (Pearson)", stats.differenced_correlation(df[x], df[y])),
+    ]
+    if days is not None:
+        month_key = (
+            df["month"].dt.strftime("%Y-%m") if pd.api.types.is_datetime64_any_dtype(df["month"]) else df["month"]
+        )
+        d = days.set_index("month").reindex(month_key.to_numpy())
+        rate_x = df[x].to_numpy() / d["store_days"].to_numpy()
+        rate_y = df[y].to_numpy() / d["covid_days"].to_numpy()
+        candidates += [
+            ("per-day rates (Pearson)", stats.correlation_ci(rate_x, rate_y)),
+            ("first differences of per-day rates (Pearson)", stats.differenced_correlation(rate_x, rate_y)),
+        ]
+    return pd.DataFrame([{"series": s, "r": e.point, "ci_low": e.low, "ci_high": e.high} for s, e in candidates])
 
 
 def approval_rates(loans: pd.DataFrame, by: str = "Loan_Purpose", approved_col: str = "Approved") -> pd.DataFrame:

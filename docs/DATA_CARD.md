@@ -75,6 +75,11 @@ These are properties of the generator, not bugs in the analysis. Anyone using th
    region yields four identical summaries.
 6. **Weather humidity and temperature are integers** drawn uniformly, with no seasonality.
 7. **Profit margins are symmetric** around 5% with a 5% standard deviation, so about 16% of orders lose money.
+8. **Monthly totals share a calendar-length confound.** The pipeline sums daily values to months, and months
+   have 28 to 31 days. The last month is only partly observed, with 18 days. As a result, monthly sales and
+   monthly COVID cases correlate (Pearson r ≈ 0.26, 95% CI 0.15 to 0.35) although the daily series are
+   independent. Divide by `pandasplayground.pipeline.days_observed` before comparing: the per-day
+   correlation's interval spans zero. Notebook 11 walks through this.
 
 ## Recommended uses
 

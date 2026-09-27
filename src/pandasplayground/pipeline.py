@@ -55,6 +55,31 @@ def monthly_covid(covid: pd.DataFrame) -> pd.DataFrame:
     return aggregation.monthly_period_summary(covid, "date", {"new_cases": "sum", "hospitalized": "mean"})
 
 
+def days_observed(superstore: pd.DataFrame, covid: pd.DataFrame) -> pd.DataFrame:
+    """Number of distinct observed days per month in each source.
+
+    Monthly *sums* scale with the number of days observed, so two unrelated daily series summed to
+    months correlate through calendar length alone (28 to 31 days, plus a partial final month).
+    Divide by these counts to compare per-day rates instead.
+    """
+    store_dates = pd.to_datetime(cleaning.normalize_column_names(superstore)["order_date"]).dt.normalize()
+    covid_dates = pd.to_datetime(covid["date"]).dt.normalize()
+
+    def _count(dates: pd.Series, name: str) -> pd.Series:
+        unique = pd.Series(dates.unique())
+        return unique.dt.to_period("M").astype(str).value_counts().rename(name)
+
+    return (
+        pd.concat([_count(store_dates, "store_days"), _count(covid_dates, "covid_days")], axis=1)
+        .fillna(0)
+        .astype(int)
+        .rename_axis("month")
+        .reset_index()
+        .sort_values("month", kind="stable")
+        .reset_index(drop=True)
+    )
+
+
 def add_features(panel: pd.DataFrame, rolling_window: int = 3) -> pd.DataFrame:
     """Add a trailing rolling mean of profit and month-over-month sales growth.
 

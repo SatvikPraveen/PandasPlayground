@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from pandasplayground import io
-from pandasplayground.pipeline import PipelineConfig, add_features, build_panel, run_pipeline
+from pandasplayground.pipeline import PipelineConfig, add_features, build_panel, days_observed, run_pipeline
 
 from .conftest import DATA, EXPORTS
 
@@ -59,3 +59,13 @@ def test_build_panel_only_keeps_months_in_both_sources():
     )
     out = build_panel(store, covid)
     assert out["month"].tolist() == ["2024-02"]
+
+
+def test_days_observed_counts_calendar_and_partial_months():
+    days = days_observed(io.read(DATA / "superstore_sales.csv"), io.read(DATA / "covid_data.parquet")).set_index(
+        "month"
+    )
+    assert days.loc["2020-02", "store_days"] == 29  # leap year
+    assert days.loc["2020-04", "covid_days"] == 30
+    assert days.loc["2047-05", "store_days"] == 18  # series ends mid-month
+    assert set(days.columns) == {"store_days", "covid_days"}

@@ -70,6 +70,11 @@ Module `stats` follows current reporting recommendations (Wasserstein & Lazar, 2
 | Categorical association | Pearson chi-square | Reports bias-corrected Cramér's V (Bergsma, 2013) and the minimum expected count. |
 | Many tests at once | Benjamini-Hochberg or Benjamini-Yekutieli FDR, Holm, Bonferroni | Correct before interpreting. |
 | Two time series | Correlation of first differences | Trending series correlate spuriously (Granger & Newbold, 1974). |
+| Two aggregated series | Per-unit rates, e.g. per observed day | Totals that scale with a shared exposure correlate through it. `pipeline.days_observed` supplies the counts. |
+
+Applying these methods to the project's own panel exposed a confound. Monthly sales and case totals
+correlate only because both scale with the number of days in the month. The data card documents this, and
+notebook 11 and the dashboard report per-day rates alongside the totals.
 
 The tests check these methods against published reference values, such as Newcombe's Wilson
 interval example. A slow test simulates bootstrap intervals and checks that their empirical coverage is near the nominal level.

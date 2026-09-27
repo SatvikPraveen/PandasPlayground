@@ -9,6 +9,7 @@ import streamlit as st
 import scripts  # noqa: F401
 from pandasplayground import dashboard, io, stats
 from pandasplayground.config import PATHS
+from pandasplayground.pipeline import days_observed
 
 st.title("Statistical inference")
 st.caption("Every estimate is reported with a 95% interval and every test with an effect size.")
@@ -24,14 +25,21 @@ def load_loans() -> pd.DataFrame:
     return io.read(PATHS.data / "bank_loans.xlsx")
 
 
-panel, loans = load_panel(), load_loans()
+@st.cache_data
+def load_days() -> pd.DataFrame:
+    return days_observed(io.read(PATHS.data / "superstore_sales.csv"), io.read(PATHS.data / "covid_data.parquet"))
+
+
+panel, loans, days = load_panel(), load_loans(), load_days()
 
 st.header("1. Are sales related to COVID cases?")
 st.markdown(
-    "Correlating two time series in levels can be misleading when both trend. Differencing removes "
-    "shared trends (Granger & Newbold, 1974). An interval that spans zero means no evidence of association."
+    "Sales and cases were generated independently, yet their **monthly totals** correlate. Both are sums "
+    "of daily values, so longer months have more of each, and the last month is only partly observed. "
+    "Differencing does not remove this. Dividing by the number of observed days does. "
+    "An interval that spans zero means no evidence of association."
 )
-st.dataframe(dashboard.correlation_table(panel).style.format(precision=3), hide_index=True)
+st.dataframe(dashboard.correlation_table(panel, days=days).style.format(precision=3), hide_index=True)
 fig = px.scatter(panel, x="new_cases", y="sales", trendline="ols", template="plotly_white")
 st.plotly_chart(fig, use_container_width=True)
 
