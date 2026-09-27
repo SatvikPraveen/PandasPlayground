@@ -1,0 +1,59 @@
+{
+  "name": "final_merged_pipeline",
+  "parameters": {
+    "rolling_window": 3,
+    "join": "inner on month (one_to_one)"
+  },
+  "inputs": [
+    {
+      "path": "data/superstore_sales.csv",
+      "sha256": "0e8d78a149fb357daf7d7a5affc19dbb1f372094f8c76529fbd4fa9b2c3d9c9e",
+      "rows": 10000,
+      "columns": 14,
+      "fingerprint": "0459faa2c0634dd43a61530a671eddcd097a68c19dd489413743604e6587c6aa"
+    },
+    {
+      "path": "data/covid_data.parquet",
+      "sha256": "7901354aaa622773e132d62fbd9d06935c2ff81d997793c1182de665bd91e305",
+      "rows": 10000,
+      "columns": 6,
+      "fingerprint": "9be949db9ff6cd41d80bc64ca064988d4d7f3905f7f0b095d8bbf70a50d8e85c"
+    }
+  ],
+  "outputs": [
+    {
+      "path": "exports/final_merged_pipeline.csv",
+      "sha256": "51569a9124f63681b936301e1b01b5d4e771bc63f53d9c3e3aced5c91951efa5",
+      "rows": 329,
+      "columns": 7,
+      "fingerprint": "52d9d543711dcb700245e0223b00a630953f2be38a9b8bcb748df1b993ceae8c"
+    }
+  ],
+  "validation": {
+    "superstore_sales": true,
+    "covid_data": true,
+    "final_merged_pipeline": true
+  },
+  "started_at": "2026-09-27T06:24:12+00:00",
+  "finished_at": "2026-09-27T06:24:12+00:00",
+  "environment": {
+    "python": "3.13.13",
+    "implementation": "CPython",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "machine": "arm64",
+    "processor": "arm",
+    "cpu_count": 10,
+    "packages": {
+      "pandas": "3.0.6",
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "pyarrow": "25.0.1",
+      "openpyxl": "3.1.5",
+      "pandasplayground": "2.0.0"
+    }
+  },
+  "git": {
+    "commit": "bce567dce4f0363282d0a92e107bcebe461feacc",
+    "dirty": false
+  }
+}
