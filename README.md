@@ -1,391 +1,250 @@
-# 📊 PandasPlayground – A Comprehensive Data Manipulation Project
+# PandasPlayground
 
-![Python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11-blue.svg)
+[![CI](https://github.com/SatvikPraveen/PandasPlayground/actions/workflows/ci.yml/badge.svg)](https://github.com/SatvikPraveen/PandasPlayground/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)
+![pandas](https://img.shields.io/badge/pandas-2.2%20%7C%203.x-150458.svg)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-![Dockerized](https://img.shields.io/badge/docker-ready-blue.svg)
-![Notebooks](https://img.shields.io/badge/notebooks-10-brightgreen.svg)
-![Tests](https://img.shields.io/badge/tests-21%20passed-brightgreen.svg)
-![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+![Typed](https://img.shields.io/badge/typing-mypy-2a6db2.svg)
 
-> Master data manipulation with **pandas** — from fundamentals to advanced performance tuning — using real-world datasets and modular notebooks.
+**A reproducible, tested toolkit and curriculum for rigorous data manipulation with pandas.**
 
----
+PandasPlayground has two layers:
 
-## 🧠 Project Purpose
+- **A curriculum** of 11 Jupyter notebooks that runs from loading and cleaning data to performance tuning and statistical inference.
+- **A typed Python package**, `pandasplayground`, that the notebooks, a CLI and a Streamlit dashboard share. It provides
+  schema validation, a deterministic pipeline with provenance manifests, interval estimates and effect sizes, seeded data
+  generation and a benchmark harness.
 
-**PandasPlayground** is designed to help aspiring data scientists and analysts master the entire pandas ecosystem through hands-on, progressive, and fully-documented Jupyter notebooks. Each module targets a specific capability — from data loading and cleaning to advanced transformations and memory profiling — ensuring a complete learning and review reference.
+Every published output can be re-derived from raw data, and CI fails if anything drifts.
 
-![Preview Dashboard](./assets/project_preview.png)
+![Dashboard preview](./assets/project_preview.png)
 
-> 🔍 Preview: Explore datasets, visualize trends, and profile performance — all in one playground!
+## Contents
 
----
+- [What makes it reproducible](#what-makes-it-reproducible)
+- [Quick start](#quick-start)
+- [Command-line interface](#command-line-interface)
+- [Curriculum](#curriculum)
+- [Package overview](#package-overview)
+- [Findings](#findings)
+- [Benchmarks](#benchmarks)
+- [Data](#data)
+- [Development](#development)
+- [Citation](#citation)
 
-## 📁 Project Structure
+## What makes it reproducible
 
-```plaintext
-PandasPlayground/
-├── assets/               # Charts, exports, and visual output images
-├── cheatsheets/          # Markdown-based reference sheets (e.g., pandas_cheatsheet.md)
-├── data/                 # Raw datasets (CSV, Excel, JSON, Parquet)
-├── exports/              # Final output files (CSV, Excel, styled reports)
-├── notebooks/            # All 10 learning notebooks (01–10)
-├── pages/                # Streamlit multipage app (expanded)
-├── pandas_env/           # Local virtual environment (⚠️ add to .gitignore)
-├── scripts/              # Modular reusable utility functions
-├── Dockerfile            # Docker support for reproducible environments
-├── LICENSE.md
-├── README.md             # You’re here!
-├── requirements.txt      # Minimal dependencies to run the project
-├── requirements_dev.txt  # Full dev environment
-└── STREAMLIT_App.py      # Interactive dashboard using Streamlit
-```
+| Guarantee | How it is enforced |
+| --- | --- |
+| Data matches its documented contract | Declarative schemas for every dataset. `pandasplayground validate` and CI check them. The [data dictionary](docs/DATA_DICTIONARY.md) is generated from the same schemas. |
+| The final export is re-derivable | `pandasplayground pipeline` rebuilds it from raw files. CI requires a **byte-identical** result. |
+| Every output is traceable | Each pipeline run writes a [manifest](exports/final_merged_pipeline.manifest.json) with input and output SHA-256 hashes, parameters, library versions and the git commit. |
+| The raw data is re-derivable | The seeded generator reproduces every non-name column of the bundled data bit-for-bit. A test enforces this. |
+| Notebooks run and stay stable | CI executes all 11 notebooks and fails if any CSV they write changes. |
+| Results hold across environments | Tests run on Python 3.10 to 3.13, pandas 2.2 and 3.x, and Linux, macOS and Windows. |
 
----
+See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) for details and references.
 
-## 🧾 Datasets Used
-
-This project uses **artificially generated datasets** designed to replicate common real-world scenarios. Each file highlights a unique aspect of data handling and analysis using `pandas`.
-
-| Dataset File                 | Format  | Purpose                                                    |
-| ---------------------------- | ------- | ---------------------------------------------------------- |
-| `superstore_sales.csv`       | CSV     | Simulated retail sales data for grouping, time series      |
-| `weather_data.json`          | JSON    | Unstructured data for parsing, cleaning, and visualization |
-| `bank_loans.xlsx`            | Excel   | Tabular data for filtering, EDA, and feature engineering   |
-| `bank_loans_multisheet.xlsx` | Excel   | Multi-sheet structure for advanced Excel parsing           |
-| `covid_data.parquet`         | Parquet | Efficient columnar data for joins and time-based analysis  |
-
-> 🛠 These datasets are **not from public sources** and were created to demonstrate the versatility of `pandas` across different formats and data challenges. You can find them in the [`data/`](./data/) folder.
-
----
-
-## ✅ Modules and Concepts
-
-| Notebook                             | Concepts                                           |
-| ------------------------------------ | -------------------------------------------------- |
-| `01_data_loading.ipynb`              | Load data, inspect structure, parse dates          |
-| `02_data_cleaning.ipynb`             | Handle missing values, type conversion, string ops |
-| `03_aggregation_grouping.ipynb`      | GroupBy, pivot, window functions                   |
-| `04_merging_joining.ipynb`           | Merge, concat, index joins                         |
-| `05_time_series.ipynb`               | Resample, rolling, timezone handling               |
-| `06_advanced_pandas.ipynb`           | .apply(), .map(), method chaining, memory tuning   |
-| `07_visualization_with_pandas.ipynb` | Bar, line, box, grouped plots                      |
-| `08_final_pipeline.ipynb`            | End-to-end data workflow pipeline                  |
-| `09_reporting_exporting.ipynb`       | Export to Excel/CSV/Parquet, styled reports        |
-| `10_performance_diagnostics.ipynb`   | Profiling, eval(), categorical, Dask               |
-
----
-
-## 📚 Learning Outcomes
-
-✅ Develop fluency with `pandas` core APIs
-✅ Build modular, reusable data pipelines
-✅ Understand performance bottlenecks in large datasets
-✅ Practice version-controlled and containerized data science
-
----
-
-## � Quick Start
-
-Get up and running in under 2 minutes:
+## Quick start
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/SatvikPraveen/PandasPlayground.git
 cd PandasPlayground
+./scripts/setup.sh              # creates .venv, installs everything, validates data, runs tests
+source .venv/bin/activate
 
-# 2. Run the automated setup script (macOS/Linux)
-chmod +x scripts/setup.sh
-./scripts/setup.sh
-
-# Or install manually:
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# 3. Launch Jupyter Lab
-jupyter lab
-# Or start the Streamlit dashboard
-streamlit run STREAMLIT_App.py
+make run-jupyter                # open the notebooks
+make run-streamlit              # dashboard on http://localhost:8501
+make reproduce                  # rebuild every output and check that nothing changed
 ```
 
-**Using Make (Recommended):**
+To install manually:
+
 ```bash
-make install        # Install dependencies
-make run-jupyter    # Launch Jupyter Lab
-make run-streamlit  # Launch Streamlit dashboard
-make test           # Run all tests
-make help           # See all available commands
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # package (editable) + notebooks + dashboard
+pip install -r requirements_dev.txt      # + tests, linters, type checker
 ```
 
----
-
-## 📦 Installation
-
-### Option 1: Automated Setup (Recommended)
-```bash
-./scripts/setup.sh
-```
-This script will:
-- ✅ Check Python version (3.9+)
-- ✅ Create virtual environment
-- ✅ Install all dependencies
-- ✅ Run verification tests
-
-### Option 2: Manual Installation
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# For development (includes testing tools)
-pip install -r requirements_dev.txt
-```
-
-### Option 3: Docker (Isolated Environment)
+To use Docker:
 
 ```bash
-# Build image
 docker build -t pandasplayground .
-
-# Run container on http://localhost:8899
-docker run -pd 8899:8888 -v $(pwd):/app pandasplayground
+docker run --rm -p 8888:8888 pandasplayground                       # JupyterLab
+docker run --rm pandasplayground pandasplayground validate           # CLI
+docker run --rm -p 8501:8501 pandasplayground \
+  streamlit run STREAMLIT_App.py --server.address=0.0.0.0            # dashboard
 ```
 
----
+JupyterLab in the container prints a login token on startup.
 
-## 💻 Using the Project
+## Command-line interface
 
-### For Learning
-- 📖 Start with `01_data_loading.ipynb` and progress sequentially
-- 🧪 Each notebook includes exercises and real-world examples
-- 📝 Refer to `cheatsheets/pandas_cheatsheet.md` for quick reference
-- 🎯 All notebooks are standalone and can be explored in any order
-
-### For Your Own Projects
-- 🔄 Start with `08_final_pipeline.ipynb` as a template
-- 🧩 Reuse functions from `scripts/` for your ETL workflows
-- 📊 Customize the Streamlit dashboard for your datasets
-- 🐳 Use `Dockerfile` for reproducible environments
-
-### Interactive Dashboard
-```bash
-streamlit run STREAMLIT_App.py
-# Visit http://localhost:8501
+```text
+pandasplayground validate      Validate every bundled dataset against its schema
+pandasplayground pipeline      Rebuild exports/final_merged_pipeline.csv from raw data, with a manifest
+pandasplayground generate      Regenerate the synthetic datasets from a seed (never overwrites data/ without --force)
+pandasplayground benchmark     Run the benchmark suite and write JSON and Markdown results
+pandasplayground docs data-dictionary [--check]
+pandasplayground info          Print environment and version information
 ```
-Features:
-- 📈 Real-time data visualization
-- 🔍 Interactive filtering and exploration
-- 📊 KPI metrics and trend analysis
-- 📱 Multi-page navigation
 
----
+## Curriculum
 
-## 📊 Performance Benchmarks
+| Notebook | Topics |
+| --- | --- |
+| `01_data_loading` | CSV, Excel, multi-sheet Excel, JSON and Parquet. Inspecting structure and parsing dates. |
+| `02_data_cleaning` | Missing values, type conversion, string normalisation, outliers. |
+| `03_aggregation_grouping` | `groupby`, named aggregation, pivot and melt, window functions. |
+| `04_merging_joining` | `merge`, `concat`, index joins, key diagnostics. |
+| `05_time_series` | Resampling, rolling windows, time zones. |
+| `06_advanced_pandas` | `apply`, `map`, method chaining, memory tuning. |
+| `07_visualization_with_pandas` | Bar, line, box and grouped plots. |
+| `08_final_pipeline` | End-to-end workflow, scripted as `pandasplayground pipeline`. |
+| `09_reporting_exporting` | Excel, CSV and Parquet exports, styled reports. |
+| `10_performance_diagnostics` | Profiling, `eval`, categoricals, Dask. |
+| `11_statistical_inference_reproducibility` | Validation, provenance, bootstrap intervals, confounding in aggregated data, effect sizes, multiple comparisons. |
 
-This project includes performance optimization techniques:
+Notebooks 01 to 10 import helpers through `scripts/`, a compatibility layer over the package. Notebook 11 uses the package directly.
+A quick reference is in [cheatsheets/pandas_cheatsheet.md](cheatsheets/pandas_cheatsheet.md).
 
-| Operation | Dataset Size | Standard pandas | Optimized | Improvement |
-|-----------|-------------|-----------------|-----------|-------------|
-| Memory Usage | 100K rows | ~45 MB | ~12 MB | 73% reduction |
-| GroupBy Aggregation | 1M rows | 2.3s | 0.8s | 65% faster |
-| String Operations | 500K rows | 5.1s | 1.2s | 76% faster |
+## Package overview
 
-See `10_performance_diagnostics.ipynb` for detailed benchmarks and `scripts/optimize_memory.py` for optimization utilities.
-
----
-
-## ❓ FAQ (Frequently Asked Questions)
-
-<details>
-<summary><strong>Q: I'm getting a "Module not found" error. What should I do?</strong></summary>
-
-**A:** Make sure you've activated your virtual environment and installed all dependencies:
-```bash
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
+```text
+src/pandasplayground/
+├── io.py            format-aware read/write, SHA-256 hashes, DataFrame fingerprints
+├── cleaning.py      non-mutating normalisation, snake_case names, IQR, z-score and MAD outliers
+├── aggregation.py   grouped, pivoted and period summaries, rolling rank
+├── merging.py       safe_merge with cardinality validation and a MergeReport
+├── memory.py        exact-by-default dtype optimisation with a MemoryReport
+├── validation.py    declarative DataFrame schemas
+├── schemas.py       contracts for every bundled dataset
+├── stats.py         bootstrap, Wilson and Fisher-z intervals, permutation and Welch tests, effect sizes, FDR
+├── pipeline.py      deterministic raw-to-panel pipeline, days_observed
+├── provenance.py    run manifests
+├── benchmark.py     calibrated, repeated micro-benchmarks
+├── datagen.py       seeded synthetic data generator
+├── dashboard.py     data logic behind the Streamlit app
+└── cli.py           the pandasplayground command
 ```
-</details>
 
-<details>
-<summary><strong>Q: Can I use my own datasets?</strong></summary>
+```python
+from pandasplayground import io, schemas, stats
+from pandasplayground.pipeline import run_pipeline
 
-**A:** Absolutely! Place your data files in the `data/` folder and adapt the notebooks. Start with `08_final_pipeline.ipynb` as a template for custom data workflows.
-</details>
+report = schemas.SUPERSTORE.validate(io.read("data/superstore_sales.csv"))
+report.raise_for_errors()
 
-<details>
-<summary><strong>Q: Which notebook should I start with?</strong></summary>
-
-**A:** If you're new to pandas, start with `01_data_loading.ipynb`. If you're experienced, jump to any topic of interest. Each notebook is self-contained.
-</details>
-
-<details>
-<summary><strong>Q: Do I need to run notebooks in order?</strong></summary>
-
-**A:** Not necessarily. While they're designed to build on each other, each notebook can run independently. However, notebooks 1-7 are recommended before attempting 8-10.
-</details>
-
-<details>
-<summary><strong>Q: How do I contribute a new notebook or feature?</strong></summary>
-
-**A:** See the [Contributing](#-how-to-contribute-or-fork) section below. We welcome all contributions! Submit a pull request with your changes.
-</details>
-
-<details>
-<summary><strong>Q: Why use Docker?</strong></summary>
-
-**A:** Docker ensures a consistent environment across different machines, eliminating "works on my machine" issues. It's optional but recommended for deployment.
-</details>
-
-<details>
-<summary><strong>Q: Can I use this project for teaching?</strong></summary>
-
-**A:** Yes! This project is designed for education. Feel free to use it in courses, workshops, or tutorials. Attribution is appreciated but not required under the GPL-3.0 license.
-</details>
-
-<details>
-<summary><strong>Q: How do I update my fork with the latest changes?</strong></summary>
-
-**A:** 
-```bash
-git remote add upstream https://github.com/SatvikPraveen/PandasPlayground.git
-git fetch upstream
-git merge upstream/main
+result = run_pipeline(write=False)
+print(stats.bootstrap_ci(result.frame.profit / result.frame.sales))
 ```
-</details>
 
-<details>
-<summary><strong>Q: The Streamlit app isn't loading data. What's wrong?</strong></summary>
+## Findings
 
-**A:** Ensure you've run the pipeline notebooks (especially `08_final_pipeline.ipynb`) to generate the required export files in the `exports/` directory.
-</details>
+Applying these methods to the project itself turned up defects that the previous version silently carried:
 
-<details>
-<summary><strong>Q: How do I run tests?</strong></summary>
+- **A confound in the headline panel.** Monthly sales and COVID case totals correlate (r ≈ 0.26, 95% CI 0.15 to 0.35)
+  although the daily data is independent. Both totals scale with the number of days in the month. Per-day rates remove
+  the effect, and differencing does not. See notebook 11 and the [data card](docs/DATA_CARD.md).
+- **Double counting on re-runs.** Notebook 03 matched regional files with a glob that also picked up a combined output
+  written by notebook 04. Every re-run then reported twice the real number of loans.
+- **Platform-dependent exports.** pandas' default CSV float parser does not round-trip the last digit, and its rounding
+  differed between macOS and Linux. Re-exported reports drifted on CI until reads switched to exact parsing.
+- **Silent data corruption.** Cleaning helpers turned missing values into the string `"nan"`, and memory optimisation
+  rounded floats when downcasting. Both are fixed and covered by property-based tests.
 
-**A:** 
-```bash
-make test  # Using Makefile
-# or
-pytest -v  # Direct command
-```
-</details>
+The full list is in the [changelog](CHANGELOG.md).
 
----
+## Benchmarks
 
-## 🧰 Tools & Libraries
+Measured with `pandasplayground benchmark` at 100,000 rows with 7 repeats. The `apply` case uses 20,000 rows.
+Speed-up is the ratio of median times, followed by the range across samples.
 
-- **pandas** - Core data manipulation
-- **numpy** - Numerical computing
-- **matplotlib**, **seaborn** - Data visualization
-- **Jupyter**, **JupyterLab** - Interactive notebooks
-- **openpyxl**, **pyarrow** - File format support
-- **memory_profiler**, **psutil** - Performance profiling
-- **Streamlit**, **Plotly** - Interactive dashboards
-- **pytest** - Testing framework
-- **Dask** - Parallel computing (optional)
+| Idiom | Speed-up |
+| --- | --- |
+| Vectorised arithmetic instead of `DataFrame.apply(axis=1)` | 594x (346x to 727x) |
+| Parquet instead of CSV for reading | 10.3x (5.7x to 12.9x) |
+| PyArrow strings instead of object strings | 4.4x (3.1x to 5.3x) |
+| `category` instead of object group keys | 2.6x (1.9x to 3.5x) |
+| `Series.isin` instead of chained `==` / `\|` | 2.3x (1.9x to 2.7x) |
 
----
+`optimize_dataframe` made the benchmark frame 93% smaller.
 
-## 📚 Documentation
+These timings come from one Apple Silicon laptop running pandas 3.0. They are relative comparisons, not absolute
+guarantees. The full table, environment and raw samples are in [docs/benchmark_results.md](docs/benchmark_results.md)
+and [benchmarks/results/latest.json](benchmarks/results/latest.json). Techniques are explained in the
+[performance guide](docs/PERFORMANCE.md).
 
-Comprehensive guides and references:
+## Data
 
-- 📖 [Data Dictionary](docs/DATA_DICTIONARY.md) - Complete dataset documentation
-- ⚡ [Performance Guidelines](docs/PERFORMANCE.md) - Optimization techniques and benchmarks
-- 📓 [Notebook Template](docs/NOTEBOOK_TEMPLATE.ipynb) - Template for creating new notebooks
-- 📋 [Quick Reference](cheatsheets/pandas_cheatsheet.md) - Pandas cheat sheet
+All datasets are **synthetic**. They are generated by `pandasplayground.datagen` with seed 42 and contain no real people.
 
----
+| File | Format | Rows |
+| --- | --- | --- |
+| `data/superstore_sales.csv` | CSV | 10,000 orders |
+| `data/bank_loans.xlsx` | Excel | 10,000 applications |
+| `data/bank_loans_multisheet.xlsx` | Excel, 4 sheets | 4 × 10,000 |
+| `data/covid_data.parquet` | Parquet | 10,000 days |
+| `data/weather_data.json` | JSON | 10,000 days |
 
-## 🔗 Related Projects
+Every variable is drawn independently, so the data has a **known null**. That makes it good for learning pandas and for
+checking whether an analysis method produces false positives. It is not suitable for substantive conclusions.
+Read the [data card](docs/DATA_CARD.md) for the generating distributions and known artefacts, and the
+[data dictionary](docs/DATA_DICTIONARY.md) for column contracts.
 
-- 🧮 [NumPyMasterPro](https://github.com/SatvikPraveen/NumPyMasterPro) – Master NumPy with modular walkthroughs
-
----
-
-Absolutely! Here's an expanded and professional version of the **How to Contribute or Fork** section to better guide future collaborators:
-
----
-
-## 🤝 How to Contribute or Fork
-
-Whether you're fixing a bug, suggesting an enhancement, or adding new learning notebooks — contributions are welcome and appreciated!
-
-### 🔀 Fork & Clone the Repository
+## Development
 
 ```bash
-# Step 1: Fork this repository on GitHub
-# Step 2: Clone your fork locally
-git clone https://github.com/SatvikPraveen/PandasPlayground.git
-cd PandasPlayground
+make check        # ruff lint + format check, mypy, fast tests
+make test-all     # including slow statistical property tests
+make coverage     # HTML coverage report
+make notebooks    # execute every notebook
+make help         # all targets
 ```
 
-### 🌱 Create a Feature Branch
+The test suite includes unit tests, Hypothesis property tests, golden-file regression tests against the committed export,
+reference-value tests for statistical methods, headless dashboard tests and notebook execution. Coverage is enforced at 85%.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Always create a new branch for your changes instead of working on `main`:
+## Project structure
 
-```bash
-git checkout -b feature/your-feature-name
+```text
+PandasPlayground/
+├── src/pandasplayground/   the package
+├── tests/                  pytest suite
+├── notebooks/              11 notebooks
+├── scripts/                compatibility layer for notebooks, setup and export scripts
+├── pages/, STREAMLIT_App.py  Streamlit dashboard
+├── data/                   raw synthetic datasets
+├── assets/, exports/       notebook and pipeline outputs, provenance manifest
+├── benchmarks/results/     raw benchmark samples
+└── docs/                   methodology, data card, data dictionary, performance guide
 ```
 
-### 🛠 Make Your Changes
+## Citation
 
-- Add your improvements (e.g., a new notebook, function in `scripts/`, or fixes in `requirements.txt`)
-- Follow consistent formatting, naming, and markdown style as used across the project
-- Update the README.md or cheatsheets if your change impacts the documentation
-- Test your code locally (if it includes logic)
+If you use PandasPlayground in teaching or research, please cite it. GitHub's "Cite this repository" button reads
+[CITATION.cff](CITATION.cff).
 
-### ✅ Commit and Push
-
-```bash
-git add .
-git commit -m "✨ Added: Short summary of your feature"
-git push origin feature/your-feature-name
+```bibtex
+@software{praveen_pandasplayground_2026,
+  author  = {Praveen, Satvik},
+  title   = {PandasPlayground: a reproducible, tested toolkit and curriculum for data manipulation with pandas},
+  version = {2.0.0},
+  year    = {2026},
+  url     = {https://github.com/SatvikPraveen/PandasPlayground}
+}
 ```
 
-### 📩 Submit a Pull Request
+## Related projects
 
-- Go to your fork on GitHub
-- Click **"Compare & pull request"**
-- Provide a clear and concise description of your changes
-- If applicable, reference any related issue (e.g., `Fixes #12`)
-- Wait for review or feedback
+- [NumPyMasterPro](https://github.com/SatvikPraveen/NumPyMasterPro): NumPy through modular walkthroughs.
 
----
+## License
 
-### 🧪 Contribution Tips
+GNU General Public License v3.0 or later. See [LICENSE](LICENSE).
 
-- Keep changes **modular and atomic** — one feature or fix per pull request
-- Be sure to **sync your fork** with the upstream repository periodically:
+## Author
 
-  ```bash
-  git remote add upstream https://github.com/SatvikPraveen/PandasPlayground.git
-  git pull upstream main
-  ```
-
-- If your feature involves code, prefer writing **reusable functions** in `scripts/` and importing them in your notebooks
-
----
-
-### 🙏 Thank You
-
-Every contribution, no matter how small, helps improve this resource for the entire data science community.
-Let’s build this playground together! 🎉
-
----
-
-## 📜 License
-
-This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0). See the [LICENSE](./LICENSE) file for more details.
-
----
-
-## 🙋‍♂️ Author
-
-Built with 💻 and ☕ by [Satvik Praveen](https://github.com/SatvikPraveen)
-Drop a ⭐ if you find this project helpful!
+[Satvik Praveen](https://github.com/SatvikPraveen) · satvikpraveen707@gmail.com

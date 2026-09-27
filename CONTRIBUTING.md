@@ -1,81 +1,48 @@
-# 🤝 Contributing to PandasPlayground
+# Contributing to PandasPlayground
 
-Thank you for your interest in contributing to **PandasPlayground**! 🎉  
-We welcome contributions of all kinds — bug reports, ideas, notebooks, utility functions, or even just improvements in documentation.
+Thanks for your interest. Contributions of notebooks, package features, tests, documentation and bug reports are welcome.
 
----
-
-## 🧾 Project Scope
-
-PandasPlayground is a modular, real-world style project designed to help users master the pandas library through hands-on practice with clean code, reusable functions, and exploratory notebooks.
-
----
-
-## 🛠️ Getting Started
-
-To contribute:
-
-1. **Fork** the repository
-2. **Clone** your fork locally:
-   ```bash
-   git clone https://github.com/SatvikPraveen/PandasPlayground.git
-   cd PandasPlayground
-   ```
-
-3. Create a virtual environment:
-
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-4. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
----
-
-## 💡 How to Contribute
-
-Here are some ways you can contribute:
-
-* 📘 Improve or add to the Jupyter notebooks
-* 🧪 Add unit tests for utility scripts in the `scripts/` folder
-* 🐛 Report or fix bugs
-* 📄 Improve documentation (README, cheatsheets, etc.)
-* 🎨 Enhance visualizations or the Streamlit dashboard
-* 🧰 Add reusable pandas utility functions
-
----
-
-## ✅ Guidelines
-
-* Ensure your changes are **modular**, **well-documented**, and **readable**
-* Name branches clearly, e.g., `feature/new-notebook`, `fix/typo-cleaning`
-* Add comments or docstrings where appropriate
-* Use `black` or `flake8` if possible for Python formatting
-* Ensure notebooks run top-to-bottom before submission
-* Submit a **pull request (PR)** with a clear title and description
-
----
-
-## 🧪 Running Tests
-
-If you modify code in the `scripts/` folder, add relevant unit tests in the `tests/` directory (if present or you add).
-
-To run tests:
+## Setup
 
 ```bash
-pytest
+git clone https://github.com/<your-fork>/PandasPlayground.git
+cd PandasPlayground
+./scripts/setup.sh && source .venv/bin/activate
+pre-commit install
 ```
 
----
+## Workflow
 
-## 🙋‍♀️ Need Help?
+1. Create a branch: `git checkout -b feat/short-description`.
+2. Make your change, with tests.
+3. Run `make check`, which covers lint, format, types and fast tests. If you changed notebooks or data code, also run `make reproduce`.
+4. Open a pull request using the template. CI must pass.
 
-Feel free to open a [GitHub Discussion](https://github.com/SatvikPraveen/PandasPlayground/discussions) or reach out by creating an issue.
+Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `test:`,
+`refactor:`, `perf:`, `ci:`, `build:`, `chore:`.
 
-Let’s build better data tools together! 🧠📊
+## Where code goes
 
-```
+- **Reusable logic** belongs in `src/pandasplayground/`. It must be typed, must not mutate its inputs, and needs tests in `tests/`.
+- **`scripts/`** only re-exports package functions for older notebooks. Do not add new logic there.
+- **Notebooks** should import from `pandasplayground` and run top to bottom from a clean kernel. CI executes them all.
+  If a notebook writes a CSV to `assets/` or `exports/`, re-running it must reproduce the committed file exactly.
+- **Streamlit pages** keep data logic in `pandasplayground.dashboard`, so it can be tested without Streamlit.
+
+## Changing data or schemas
+
+- Schemas in `src/pandasplayground/schemas.py` are the contract. After editing one, run
+  `pandasplayground docs data-dictionary` and commit the regenerated `docs/DATA_DICTIONARY.md`.
+- Never hand-edit files in `data/`. Change `datagen.py` and regenerate with `pandasplayground generate --out data --force`.
+  Then update `docs/DATA_CARD.md` and explain why in the pull request.
+- If a change intentionally alters `exports/final_merged_pipeline.csv`, run `pandasplayground pipeline` and commit the export
+  and its manifest together.
+
+## Statistical and performance claims
+
+- Report intervals and effect sizes, not just p-values, and correct for multiple comparisons.
+- Performance numbers in docs must come from `pandasplayground benchmark`, with the results JSON committed.
+
+## Questions
+
+Open an issue using the question template.

@@ -32,7 +32,7 @@ Fixes #
 - Pandas version:
 
 **Tests run:**
-- [ ] All existing tests pass (`make test` or `pytest -v`)
+- [ ] `make check` passes (lint, format, types, tests)
 - [ ] Added new tests for my changes
 - [ ] Manual testing completed
 - [ ] Tested in Jupyter notebooks
@@ -53,9 +53,9 @@ Fixes #
 - [ ] Any dependent changes have been merged and published
 
 ## 📚 Code Quality
-- [ ] Code is formatted with `black` (or follows existing style)
-- [ ] Imports are organized with `isort`
-- [ ] No `flake8` warnings
+- [ ] New package code is typed and does not mutate its inputs
+- [ ] `make reproduce` leaves committed outputs unchanged (if notebooks, data or the pipeline changed)
+- [ ] Statistical claims include intervals or effect sizes; performance claims cite `pandasplayground benchmark`
 - [ ] Docstrings added/updated for new functions
 - [ ] Type hints added where appropriate
 
