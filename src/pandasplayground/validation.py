@@ -170,8 +170,10 @@ class DataFrameSchema:
                     add(Failure(spec.name, "parseable as datetime", int(bad.sum()), _examples(s[bad], sample_size)))
                 s = coerced
             elif not _TYPE_CHECKS[spec.dtype](s):
-                add(Failure(spec.name, f"dtype is {spec.dtype}", len(s), (str(s.dtype),)))
-                continue
+                hint = ""
+                if spec.dtype == "int" and pd.api.types.is_float_dtype(s) and s.isna().any():
+                    hint = " (missing values upcast integers to float)"
+                add(Failure(spec.name, f"dtype is {spec.dtype}{hint}", 1, (str(s.dtype),)))
 
             nulls = s.isna()
             if not spec.nullable and nulls.any():
@@ -182,16 +184,16 @@ class DataFrameSchema:
                 dup = present.duplicated(keep=False)
                 if dup.any():
                     add(Failure(spec.name, "unique", int(dup.sum()), _examples(present[dup], sample_size)))
-            if spec.min is not None:
-                lo = pd.Timestamp(spec.min) if isinstance(spec.min, str) else spec.min
-                bad = present < lo
+            for bound, label, op in ((spec.min, ">=", "lt"), (spec.max, "<=", "gt")):
+                if bound is None:
+                    continue
+                value = pd.Timestamp(bound) if isinstance(bound, str) else bound
+                try:
+                    bad = getattr(present, op)(value)
+                except TypeError:  # values not comparable with the bound; the dtype failure already covers it
+                    continue
                 if bad.any():
-                    add(Failure(spec.name, f">= {spec.min}", int(bad.sum()), _examples(present[bad], sample_size)))
-            if spec.max is not None:
-                hi = pd.Timestamp(spec.max) if isinstance(spec.max, str) else spec.max
-                bad = present > hi
-                if bad.any():
-                    add(Failure(spec.name, f"<= {spec.max}", int(bad.sum()), _examples(present[bad], sample_size)))
+                    add(Failure(spec.name, f"{label} {bound}", int(bad.sum()), _examples(present[bad], sample_size)))
             if spec.allowed is not None:
                 bad = ~present.isin(list(spec.allowed))
                 if bad.any():

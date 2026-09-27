@@ -65,6 +65,15 @@ def test_missing_column_and_dtype_mismatch():
     assert any(f.column == "age" and f.check == "dtype is int" for f in report.failures)
 
 
+def test_dtype_failure_does_not_hide_other_failures():
+    df = valid().astype({"age": float})
+    df.loc[0, "age"] = float("nan")
+    df.loc[1, "age"] = 500.0
+    checks = {f.check for f in SCHEMA.validate(df).failures}
+    assert "dtype is int (missing values upcast integers to float)" in checks
+    assert "<= 120" in checks
+
+
 def test_nulls_min_rows_and_datetime_min():
     df = valid().iloc[:0]
     assert not SCHEMA.validate(df).ok
