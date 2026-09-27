@@ -222,21 +222,21 @@ class BenchmarkRun:
     def to_markdown(self) -> str:
         env = self.environment
         lines = [
-            f"Measured on {self.timestamp} with {self.n_rows:,} rows, "
-            f"{self.repeat} repeats per case (seed {self.seed}).",
+            f"Measured on {self.timestamp}: {self.repeat} repeats per case, seed {self.seed}. "
+            "The row-wise `apply` case uses a smaller input because it is orders of magnitude slower.",
             "",
             f"Environment: Python {env['python']} on {env['platform']} "
             f"({env['machine']}, {env['cpu_count']} logical CPUs); "
             + ", ".join(f"{k} {v}" for k, v in env["packages"].items() if v),
             "",
-            "| Case | Baseline (median ± IQR) | Optimised (median ± IQR) | Speed-up (median) | Speed-up range |",
-            "| --- | --- | --- | --- | --- |",
+            "| Case | Rows | Baseline (median ± IQR) | Optimised (median ± IQR) | Speed-up (median) | Speed-up range |",
+            "| --- | ---: | --- | --- | --- | --- |",
         ]
         for c in self.comparisons:
             lo, hi = c.speedup_range
             base, opt = _md(c.baseline.name), _md(c.optimized.name)
             lines.append(
-                f"| {_md(c.description)} | {base}: {_fmt(c.baseline.median)} ± {_fmt(c.baseline.iqr)} "
+                f"| {_md(c.description)} | {c.n_rows:,} | {base}: {_fmt(c.baseline.median)} ± {_fmt(c.baseline.iqr)} "
                 f"| {opt}: {_fmt(c.optimized.median)} ± {_fmt(c.optimized.iqr)} "
                 f"| **{c.speedup:.1f}x** | {lo:.1f}x to {hi:.1f}x |"
             )
