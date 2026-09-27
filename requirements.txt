@@ -21,6 +21,7 @@ nbconvert>=7.10
 
 # Dashboard
 streamlit>=1.33
+statsmodels>=0.14  # OLS trendlines in plotly express
 
 # Synthetic data generation
 Faker>=24.0
