@@ -8,7 +8,7 @@ from .conftest import ROOT
 
 pytest.importorskip("streamlit")
 pytest.importorskip("plotly")
-from streamlit.testing.v1 import AppTest  # noqa: E402
+from streamlit.testing.v1 import AppTest
 
 pytestmark = pytest.mark.integration
 
