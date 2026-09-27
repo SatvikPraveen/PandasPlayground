@@ -1,32 +1,34 @@
-# Core Libraries
-pandas>=2.2.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
+# Runtime + notebook + dashboard dependencies.
+# The canonical dependency specification lives in pyproject.toml;
+# this file mirrors `pip install -e ".[viz,app,datagen,notebooks,perf]"` for convenience.
+pandas>=2.2
+numpy>=1.26
+scipy>=1.11
+pyarrow>=14.0
+openpyxl>=3.1
 
-# Jupyter Notebook
-notebook>=7.0.0
-ipython>=8.0.0
-jupyterlab>=4.0.0
+# Visualisation
+matplotlib>=3.8
+seaborn>=0.13
+plotly>=5.18
 
-# Excel and Parquet Support
-openpyxl>=3.1.0      # For Excel (.xlsx) read/write
-pyarrow>=14.0.0      # For Parquet read/write
-fastparquet>=2023.8.0  # Alternative Parquet engine
+# Notebooks
+jupyterlab>=4.0
+notebook>=7.0
+ipykernel>=6.29
+nbformat>=5.9
+nbconvert>=7.10
 
-# Performance Profiling (Optional but recommended)
-memory_profiler>=0.61.0
-psutil>=5.9.0
+# Dashboard
+streamlit>=1.33
 
-# Exporting and Reporting
-nbconvert>=7.10.0    # For PDF/HTML export from notebooks
-jinja2>=3.1.0        # Template rendering for reports
+# Synthetic data generation
+Faker>=24.0
 
-# Streamlit App (Optional UI Layer)
-streamlit>=1.33.0
+# Performance profiling
+memory_profiler>=0.61
+psutil>=5.9
+dask[dataframe]>=2024.4
 
-# Testing & Utilities
-pytest>=8.2.0
-
-# Dask for Large DataFrames (Optional)
-dask[dataframe]>=2024.4.1
+# Install the local package itself (editable) so `import pandasplayground` works everywhere
+-e .

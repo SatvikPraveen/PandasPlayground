@@ -1,37 +1,11 @@
-# ========================================
-# 🧪 Development Dependencies
-# ========================================
-# This file contains packages needed for development, testing, and code quality.
-# For production use, install from requirements.txt only.
-
-# Includes all production dependencies
+# Development dependencies (tests, linting, typing, notebook execution).
 -r requirements.txt
 
-# ----------------------------------------
-# 🐛 Testing & Code Quality
-# ----------------------------------------
-pytest>=8.2.0                # Unit testing framework
-pytest-cov>=4.1.0           # Test coverage reporting
-black>=24.0.0               # Code formatter
-flake8>=7.0.0               # Linting/style checking
-mypy>=1.8.0                 # Static type checking
-isort>=5.13.0               # Import sorting
-
-# ----------------------------------------
-# 📝 Documentation
-# ----------------------------------------
-sphinx>=7.2.0               # Documentation generation
-sphinx-rtd-theme>=2.0.0     # ReadTheDocs theme
-
-# ----------------------------------------
-# 🔧 Development Tools
-# ----------------------------------------
-ipdb>=0.13.13               # Enhanced debugger for IPython
-pre-commit>=3.6.0           # Git hooks for code quality
-Faker>=24.0.0               # Mock data generation (already used in scripts)
-
-# ----------------------------------------
-# 📊 Jupyter Enhancements
-# ----------------------------------------
-jupyter-contrib-nbextensions>=0.7.0  # Additional notebook extensions
-jupyterlab-lsp>=5.0.0               # Language server protocol support
+pytest>=8.2
+pytest-cov>=5.0
+hypothesis>=6.100
+nbmake>=1.5
+ruff>=0.6
+mypy>=1.10
+pandas-stubs>=2.2
+pre-commit>=3.6

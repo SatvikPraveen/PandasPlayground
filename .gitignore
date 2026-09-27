@@ -74,3 +74,11 @@ Thumbs.db
 !assets/*.png
 !assets/*.jpg
 !assets/*.svg
+# ----------------------------
+# Tooling caches & generated run artefacts
+# ----------------------------
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+coverage.xml
+runs/

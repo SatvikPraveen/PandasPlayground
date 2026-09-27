@@ -1,50 +1,34 @@
-# ========================================
-# 🎨 Pre-commit Configuration
-# ========================================
-# Install: pip install pre-commit
-# Setup: pre-commit install
-# Run manually: pre-commit run --all-files
-
+# Install: pip install pre-commit && pre-commit install
+# Run on all files: pre-commit run --all-files
 repos:
-  # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-      - id: check-added-large-files
-        args: ['--maxkb=5000']
-      - id: check-json
       - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]
       - id: mixed-line-ending
 
-  # Python code formatting
-  - repo: https://github.com/psf/black
-    rev: 25.1.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
     hooks:
-      - id: black
-        args: ['--line-length=120']
-        language_version: python3.9
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
 
-  # Import sorting
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
     hooks:
-      - id: isort
-        args: ['--profile', 'black', '--line-length', '120']
+      - id: mypy
+        files: ^src/
+        additional_dependencies: ["pandas-stubs>=2.2", "numpy>=1.26"]
 
-  # Linting
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
-        args: ['--max-line-length=120', '--extend-ignore=E203,W503']
-        exclude: ^venv/
-
-  # Jupyter notebook cleaning
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.1
+    rev: 0.7.1
     hooks:
       - id: nbstripout
-        args: ['--extra-keys', 'metadata.kernelspec metadata.language_info']
+        args: ["--keep-output", "--extra-keys", "metadata.kernelspec metadata.language_info"]
