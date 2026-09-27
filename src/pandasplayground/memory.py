@@ -34,8 +34,11 @@ class MemoryReport:
 
 def _downcast_float(series: pd.Series, rtol: float) -> pd.Series:
     candidate = series.astype(np.float32)
-    # Only accept float32 if it represents every value within tolerance (float32 has ~7 significant digits).
-    if np.allclose(candidate.to_numpy(dtype=np.float64), series.to_numpy(dtype=np.float64), rtol=rtol, equal_nan=True):
+    # Accept float32 only if every value round-trips within ``rtol`` (exactly, when rtol == 0).
+    # float32 carries ~7 significant digits, so e.g. 1292.63 is *not* exactly representable.
+    if np.allclose(
+        candidate.to_numpy(dtype=np.float64), series.to_numpy(dtype=np.float64), rtol=rtol, atol=0.0, equal_nan=True
+    ):
         return candidate
     return series
 
@@ -70,7 +73,7 @@ def optimize_dataframe(
     category_cols: Iterable[str] | None = None,
     auto_category_threshold: float | None = None,
     downcast_floats: bool = True,
-    float_rtol: float = 1e-6,
+    float_rtol: float = 0.0,
     verbose: bool = False,
     return_report: bool = False,
 ) -> pd.DataFrame | tuple[pd.DataFrame, MemoryReport]:
@@ -80,11 +83,13 @@ def optimize_dataframe(
         category_cols: columns to convert to ``category`` unconditionally.
         auto_category_threshold: also convert any text column whose unique-value ratio is below
             this fraction (e.g. ``0.5``). ``None`` disables automatic detection.
-        downcast_floats: allow float64 -> float32 when it is lossless within ``float_rtol``.
+        downcast_floats: allow float64 -> float32 when every value round-trips within ``float_rtol``.
+        float_rtol: relative tolerance for float downcasting. The default ``0.0`` only accepts
+            exact round-trips; pass e.g. ``1e-6`` to trade precision for memory explicitly.
         return_report: also return a :class:`MemoryReport`.
 
     Integer downcasting is always exact. Float downcasting is verified per column, so the
-    default behaviour never silently loses precision beyond ``float_rtol``.
+    default behaviour never loses precision.
     """
     before = memory_bytes(df)
     out = df.copy()

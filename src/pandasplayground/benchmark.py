@@ -243,7 +243,8 @@ class BenchmarkRun:
         m = self.memory
         lines += [
             "",
-            f"Memory: `optimize_dataframe` reduced the benchmark frame from {m['before_bytes'] / 2**20:.2f} MiB to "
+            "Memory: `optimize_dataframe(auto_category_threshold=0.5, float_rtol=1e-6)` reduced the benchmark frame "
+            f"from {m['before_bytes'] / 2**20:.2f} MiB to "
             f"{m['after_bytes'] / 2**20:.2f} MiB (**{m['reduction'] * 100:.1f}%** smaller) with dtype changes: "
             + ", ".join(f"`{k}` {a}->{b}" for k, (a, b) in m["dtype_changes"].items())
             + ".",
@@ -278,7 +279,7 @@ def run_suite(
     with tempfile.TemporaryDirectory() as tmp:
         comparisons.append(_case_io_formats(df, repeat, Path(tmp)))
 
-    optimized, report = optimize_dataframe(df, auto_category_threshold=0.5, return_report=True)
+    optimized, report = optimize_dataframe(df, auto_category_threshold=0.5, float_rtol=1e-6, return_report=True)
     assert memory_bytes(optimized) == report.after_bytes
     memory = {
         "before_bytes": report.before_bytes,
