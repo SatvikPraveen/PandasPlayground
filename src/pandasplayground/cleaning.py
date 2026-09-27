@@ -55,7 +55,10 @@ def normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
 def _normalize_text(series: pd.Series, lower: bool) -> pd.Series:
     # Operate only on non-missing values so NaN/None stay missing (a naive
     # ``astype(str)`` would turn them into the literal string "nan").
-    out = series.copy()
+    dtype = series.dtype
+    # Non-text columns (e.g. integer IDs) must be widened first: pandas 3 refuses to write strings into int64.
+    text_like = pd.api.types.is_string_dtype(dtype) or pd.api.types.is_object_dtype(dtype)
+    out = series.copy() if text_like else series.astype(object)
     mask = out.notna()
     cleaned = out[mask].astype(str).str.strip().str.replace(_WHITESPACE, " ", regex=True)
     if lower:

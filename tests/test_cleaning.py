@@ -91,6 +91,11 @@ def test_missingness_report():
     assert rep.index[0] == "a"
 
 
+def test_align_customer_ids_casts_integer_ids():
+    out = cleaning.align_customer_ids(pd.DataFrame({"customer_id": [1001, 1002]}))
+    assert out["customer_id"].tolist() == ["1001", "1002"]
+
+
 def test_align_customer_ids():
     out = cleaning.align_customer_ids(pd.DataFrame({"customer_id": [" 7 ", "8"]}))
     assert out["customer_id"].tolist() == ["7", "8"]
