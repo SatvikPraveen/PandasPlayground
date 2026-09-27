@@ -95,7 +95,7 @@ select = [
     "RUF",      # ruff-specific
 ]
 ignore = [
-    "PD901",    # generic `df` variable names are idiomatic in a pandas teaching repo
+
     "PD011",    # `.values` false positives on non-pandas objects
     "RUF001", "RUF002", "RUF003",  # allow unicode in strings/docstrings
 ]
@@ -109,7 +109,6 @@ ignore = [
 known-first-party = ["pandasplayground", "scripts"]
 
 [tool.mypy]
-python_version = "3.10"
 files = ["src/pandasplayground"]
 warn_unused_configs = true
 warn_redundant_casts = true
