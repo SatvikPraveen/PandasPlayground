@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -13,7 +14,7 @@ EXPORTS = ROOT / "exports"
 
 settings.register_profile("ci", max_examples=200, deadline=None, suppress_health_check=[HealthCheck.too_slow])
 settings.register_profile("dev", max_examples=50, deadline=None)
-settings.load_profile("dev")
+settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "dev"))
 
 
 @pytest.fixture
